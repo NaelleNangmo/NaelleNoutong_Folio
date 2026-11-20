@@ -3,6 +3,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import Hero from '@/components/sections/Hero';
 import About from '@/components/sections/About';
+import Profiles from '@/components/sections/Profiles';
 import Projects from '@/components/sections/Projects';
 import DataLab from '@/components/sections/DataLab';
 import Journey from '@/components/sections/Journey';
@@ -17,6 +18,7 @@ export default function Home() {
         <main>
           <Hero />
           <About />
+          <Profiles />
           <Projects />
           <DataLab />
           <Journey />

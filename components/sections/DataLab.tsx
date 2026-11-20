@@ -5,7 +5,8 @@ import dynamic from "next/dynamic";
 import { useI18n } from "@/lib/i18n";
 import { motion } from "framer-motion";
 import SectionWrapper from "@/components/SectionWrapper";
-import { Database, GitBranch, HardDrive, BarChart3, Eye } from "lucide-react";
+import { Database, GitBranch, HardDrive, BarChart3, Eye, Loader2, Github } from "lucide-react";
+import { NYC_TAXI_REPO_PUBLISHED, NYC_TAXI_REPO_URL } from "@/lib/projects";
 
 const DataLabScene = dynamic(() => import("@/components/three/DataLabScene"), {
   ssr: false,
@@ -19,6 +20,9 @@ const stages = [
   { icon: BarChart3, key: "datalab.analyze", color: "#A78BFA" },
   { icon: Eye, key: "datalab.visualize", color: "#72E6FF" },
 ];
+
+const highlightTags = ["Python", "SQL", "ELT", "Power BI", "Excel"];
+const accentColor = "#72E6FF";
 
 export default function DataLab() {
   const { t } = useI18n();
@@ -104,6 +108,97 @@ export default function DataLab() {
         >
           {t("datalab.disclaimer")}
         </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          whileHover={{ y: -8 }}
+          className="group relative mx-auto mt-10 max-w-2xl overflow-hidden rounded-2xl border border-border/40 bg-card/40 p-6 transition-all hover:border-primary/30"
+        >
+          <div
+            className="absolute -top-16 -right-16 h-40 w-40 rounded-full opacity-10 blur-3xl transition-all duration-500 group-hover:opacity-30"
+            style={{ background: accentColor }}
+          />
+          <div className="relative">
+            <div className="mb-4 flex items-start justify-between">
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-xl border transition-all"
+                style={{
+                  borderColor: `${accentColor}40`,
+                  background: `${accentColor}10`,
+                }}
+              >
+                <span
+                  className="font-mono text-sm font-bold"
+                  style={{ color: accentColor }}
+                >
+                  N
+                </span>
+              </div>
+              <span className="flex items-center gap-1 rounded-full border border-primary/30 bg-primary/5 px-2.5 py-1 font-mono text-xs text-primary">
+                <Loader2 className="h-3 w-3 animate-spin-slow" style={{ animationDuration: "3s" }} />
+                {t("projects.inProgress")}
+              </span>
+            </div>
+
+            <h3 className="mb-3 text-lg font-semibold transition-colors group-hover:text-primary">
+              {t("datalab.highlight.title")}
+            </h3>
+
+            <div className="mb-4 flex flex-wrap gap-3">
+              {[
+                t("datalab.highlight.metricRows"),
+                t("datalab.highlight.metricMonth"),
+                t("datalab.highlight.metricCloud"),
+              ].map((metric) => (
+                <span
+                  key={metric}
+                  className="rounded-lg border border-border/60 px-3 py-1 font-mono text-xs text-muted-foreground"
+                >
+                  {metric}
+                </span>
+              ))}
+            </div>
+
+            <div className="mb-4 flex flex-wrap gap-1.5">
+              {highlightTags.map((tech) => (
+                <span
+                  key={tech}
+                  className="rounded-md border border-border/40 px-2 py-0.5 font-mono text-xs text-muted-foreground"
+                >
+                  {tech}
+                </span>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between border-t border-border/30 pt-4">
+              <span className="font-mono text-xs text-muted-foreground/60">
+                {t("datalab.highlight.title")}
+              </span>
+              {NYC_TAXI_REPO_PUBLISHED ? (
+                <a
+                  href={NYC_TAXI_REPO_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-xl border border-border/60 px-4 py-2 text-sm font-medium transition-all hover:border-primary/40 hover:text-primary"
+                >
+                  <Github className="h-4 w-4" />
+                  {t("projects.github")}
+                </a>
+              ) : (
+                <span
+                  aria-disabled="true"
+                  className="flex cursor-not-allowed items-center gap-2 rounded-xl border border-border/40 px-4 py-2 text-sm font-medium text-muted-foreground/40"
+                >
+                  <Github className="h-4 w-4" />
+                  {t("projects.repoSoon")}
+                </span>
+              )}
+            </div>
+          </div>
+        </motion.div>
       </div>
     </SectionWrapper>
   );

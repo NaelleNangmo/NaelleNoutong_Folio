@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
 import { projects, Project, ProjectCategory } from "@/lib/projects";
 import { motion, AnimatePresence } from "framer-motion";
 import SectionWrapper from "@/components/SectionWrapper";
-import { ArrowUpRight, ArrowLeft, Github, CheckCircle2, AlertCircle, X } from "lucide-react";
+import { ArrowUpRight, ArrowLeft, Github, CheckCircle2, AlertCircle, X, Loader2 } from "lucide-react";
 
 type Filter = "all" | ProjectCategory;
 
@@ -20,6 +20,17 @@ export default function Projects() {
   const { t, locale } = useI18n();
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<Project | null>(null);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<Filter>).detail;
+      if (detail === "all" || detail === "fullstack" || detail === "data" || detail === "cloud") {
+        setFilter(detail);
+      }
+    };
+    window.addEventListener("projects:filter", handler);
+    return () => window.removeEventListener("projects:filter", handler);
+  }, []);
 
   const filtered = filter === "all" ? projects : projects.filter((p) => p.category === filter);
 
@@ -96,7 +107,12 @@ export default function Projects() {
                         {project.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    {project.verified ? (
+                    {project.inProgress ? (
+                      <span className="flex items-center gap-1 rounded-full border border-primary/30 bg-primary/5 px-2.5 py-1 font-mono text-xs text-primary">
+                        <Loader2 className="h-3 w-3 animate-spin-slow" style={{ animationDuration: "3s" }} />
+                        {t("projects.inProgress")}
+                      </span>
+                    ) : project.verified ? (
                       <CheckCircle2 className="h-4 w-4 text-primary/60" />
                     ) : (
                       <AlertCircle className="h-4 w-4 text-muted-foreground/40" />
@@ -228,52 +244,66 @@ function ProjectDetailModal({
                 <DetailBlock title={t("projects.objective")} content={project.objective[locale]} />
               </div>
 
-              <div className="mt-6">
-                <h4 className="mb-3 font-mono text-xs uppercase tracking-widest text-primary/60">
-                  {t("projects.features")}
-                </h4>
-                <ul className="grid gap-2 sm:grid-cols-2">
-                  {project.features[locale].map((feature, i) => (
-                    <li
+              {project.detailSections ? (
+                <div className="mt-6 space-y-6">
+                  {project.detailSections.map((section, i) => (
+                    <DetailBlock
                       key={i}
-                      className="flex items-start gap-2 text-sm text-muted-foreground"
-                    >
-                      <span
-                        className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
-                        style={{ background: project.accentColor }}
-                      />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="mt-6">
-                <h4 className="mb-3 font-mono text-xs uppercase tracking-widest text-primary/60">
-                  {t("projects.tech")}
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {project.technologies.map((tech) => (
-                    <span
-                      key={tech}
-                      className="rounded-lg border border-border/60 px-3 py-1 font-mono text-xs"
-                      style={{ color: project.accentColor }}
-                    >
-                      {tech}
-                    </span>
+                      title={t(section.titleKey)}
+                      content={section.content[locale]}
+                    />
                   ))}
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className="mt-6">
+                    <h4 className="mb-3 font-mono text-xs uppercase tracking-widest text-primary/60">
+                      {t("projects.features")}
+                    </h4>
+                    <ul className="grid gap-2 sm:grid-cols-2">
+                      {project.features[locale].map((feature, i) => (
+                        <li
+                          key={i}
+                          className="flex items-start gap-2 text-sm text-muted-foreground"
+                        >
+                          <span
+                            className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
+                            style={{ background: project.accentColor }}
+                          />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
 
-              <div className="mt-6 grid gap-6 md:grid-cols-2">
-                <DetailBlock title={t("projects.role")} content={project.role[locale]} />
-                {project.learnings && (
-                  <DetailBlock
-                    title={t("projects.learnings")}
-                    content={project.learnings[locale]}
-                  />
-                )}
-              </div>
+                  <div className="mt-6">
+                    <h4 className="mb-3 font-mono text-xs uppercase tracking-widest text-primary/60">
+                      {t("projects.tech")}
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {project.technologies.map((tech) => (
+                        <span
+                          key={tech}
+                          className="rounded-lg border border-border/60 px-3 py-1 font-mono text-xs"
+                          style={{ color: project.accentColor }}
+                        >
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mt-6 grid gap-6 md:grid-cols-2">
+                    <DetailBlock title={t("projects.role")} content={project.role[locale]} />
+                    {project.learnings && (
+                      <DetailBlock
+                        title={t("projects.learnings")}
+                        content={project.learnings[locale]}
+                      />
+                    )}
+                  </div>
+                </>
+              )}
 
               <div className="mt-8 flex items-center justify-between border-t border-border/30 pt-6">
                 <button
@@ -283,7 +313,16 @@ function ProjectDetailModal({
                   <ArrowLeft className="h-4 w-4" />
                   {t("projects.back")}
                 </button>
-                {project.githubUrl && (
+                {project.repoPublished === false && (
+                  <span
+                    aria-disabled="true"
+                    className="flex cursor-not-allowed items-center gap-2 rounded-xl border border-border/40 px-4 py-2 text-sm font-medium text-muted-foreground/40"
+                  >
+                    <Github className="h-4 w-4" />
+                    {t("projects.repoSoon")}
+                  </span>
+                )}
+                {project.githubUrl && project.repoPublished !== false && (
                   <a
                     href={project.githubUrl}
                     target="_blank"
